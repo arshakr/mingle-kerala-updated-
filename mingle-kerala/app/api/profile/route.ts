@@ -17,7 +17,7 @@ export async function PATCH(req: NextRequest) {
       const updated = await tx.user.update({ where: { id: user.id }, data: { ...data, ...(data.username && data.username !== user.username ? { usernameChangedAt: new Date() } : {}) } });
       if (interests) {
         await tx.userInterest.deleteMany({ where: { userId: user.id } });
-        for (const name of interests) await tx.userInterest.create({ data: { userId: user.id, interest: { connectOrCreate: { where: { name }, create: { name } } } } });
+        for (const name of interests) await tx.userInterest.create({ data: { user: { connect: { id: user.id } }, interest: { connectOrCreate: { where: { name }, create: { name } } } } });
       }
       return updated;
     });

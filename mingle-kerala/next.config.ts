@@ -11,6 +11,7 @@ const noIndex = [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingRoot: process.cwd(),
   async headers() {
     return [
       { source: "/:path*", headers: common },
