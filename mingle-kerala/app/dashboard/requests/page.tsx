@@ -1,0 +1,16 @@
+"use client";
+import {useLocale} from "@/components/LocaleProvider";
+import {useEffect,useState} from "react";
+import {Check, X, UserRoundPlus} from "lucide-react";
+import {PageIntro} from "@/components/PageIntro";
+import {Avatar} from "@/components/Avatar";
+import {api,when} from "@/lib/client";
+type Req={id:string;senderId:string;receiverId:string;status:string;createdAt:string;sender:{id:string;username:string;avatarSeed:string;district:string};receiver:{id:string;username:string;avatarSeed:string;district:string}};
+export default function Requests(){const {t}=useLocale();const [requests,setRequests]=useState<Req[]>([]);const [id,setId]=useState("");const [busy,setBusy]=useState("");const [notice,setNotice]=useState("");const [error,setError]=useState("");
+  async function load(){try{const [a,b]=await Promise.all([api<{requests:Req[]}>("/api/chat-requests"),api<{user:{id:string}}>("/api/auth/me")]);setRequests(a.requests);setId(b.user.id);}catch(e){setError((e as Error).message);}}
+  useEffect(()=>{void load();},[]);
+  async function act(reqId:string,action:"ACCEPT"|"DECLINE"){setBusy(reqId);setNotice("");try{await api(`/api/chat-requests/${reqId}`,{method:"PATCH",body:{action}});setNotice(action==="ACCEPT"?t("Request accepted. You can chat now.","അഭ്യർത്ഥന സ്വീകരിച്ചു. ഇനി സംസാരിക്കാം."):t("Request declined.","അഭ്യർത്ഥന നിരസിച്ചു."));await load();}catch(e){setNotice((e as Error).message);}finally{setBusy("");}}
+  const incoming=requests.filter(r=>r.receiverId===id&&r.status==="PENDING");const other=requests.filter(r=>!(r.receiverId===id&&r.status==="PENDING"));
+  function list(rs:Req[]){return rs.map(r=>{const person=r.senderId===id?r.receiver:r.sender;return <div className="request-item" key={r.id}><Avatar seed={person.avatarSeed} size={45}/><div><h3>{person.username}</h3><p>{person.district} · {r.status.toLowerCase()} · {when(r.createdAt)}</p></div>{r.receiverId===id&&r.status==="PENDING"&&<div className="item-actions"><button className="btn btn-primary" disabled={busy===r.id} onClick={()=>act(r.id,"ACCEPT")}><Check size={14}/> {t("Accept","സ്വീകരിക്കൂ")}</button><button className="icon-btn" aria-label={t("Decline request","അഭ്യർത്ഥന നിരസിക്കൂ")} disabled={busy===r.id} onClick={()=>act(r.id,"DECLINE")}><X size={16}/></button></div>}</div>;});}
+  return <><PageIntro eyebrow={t("CONNECTIONS / REQUESTS","ചാറ്റ് / അഭ്യർത്ഥനകൾ")} title={t("Conversations begin with yes.","സമ്മതത്തോടെ തുടങ്ങുന്ന സംഭാഷണങ്ങൾ.")} desc={t("Review who wants to talk with you.","ആരാണ് നിങ്ങളോട് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നത് എന്ന് കാണൂ.")}/>{(notice||error)&&<div role="status" className="form-message form-success" style={{marginBottom:18}}>{notice||error}</div>}<div className="section-label">{t("INCOMING REQUESTS","പുതിയ അഭ്യർത്ഥനകൾ")} · {incoming.length}</div><div className="list-panel">{incoming.length?list(incoming):<div className="empty-state"><UserRoundPlus size={25} style={{margin:"0 auto 10px"}}/><h3>{t("Nothing pending.","അഭ്യർത്ഥനകളില്ല.")}</h3><p>{t("New chat requests appear here.","പുതിയ ചാറ്റ് അഭ്യർത്ഥനകൾ ഇവിടെ കാണാം.")}</p></div>}</div><div className="section-label">{t("REQUEST HISTORY","മുൻ അഭ്യർത്ഥനകൾ")}</div><div className="list-panel">{other.length?list(other):<div className="empty-state">{t("No requests yet.","ഇതുവരെ അഭ്യർത്ഥനകളില്ല.")}</div>}</div></>;
+}

@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: mingle-kerala
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npm run db:deploy && npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_URL
+        value: https://minglekerala.in
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://minglekerala.in
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ACTIVATION_CODE_SECRET
+        generateValue: true
+      - key: UPI_ID
+        value: arshaksfi1-1@okicici
+      - key: NEXT_PUBLIC_SUPPORT_EMAIL
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

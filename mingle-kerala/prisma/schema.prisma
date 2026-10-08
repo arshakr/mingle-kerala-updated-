@@ -1,0 +1,170 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum Gender { MALE FEMALE PREFER_NOT_TO_SAY }
+enum Language { MALAYALAM ENGLISH BOTH }
+enum Role { USER MODERATOR ADMIN SUPER_ADMIN }
+enum AccountStatus { ACTIVE SUSPENDED BANNED DELETED }
+enum PaymentStatus { PENDING_VERIFICATION VERIFIED REJECTED REFUNDED }
+enum RequestStatus { PENDING ACCEPTED DECLINED }
+enum ReportStatus { PENDING REVIEWED DISMISSED ACTIONED }
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  passwordHash String
+  username String @unique
+  role Role @default(USER)
+  status AccountStatus @default(ACTIVE)
+  authVersion Int @default(0)
+  age Int
+  gender Gender
+  district String
+  locality String @default("")
+  showLocality Boolean @default(false)
+  language Language
+  bio String @default("")
+  avatarSeed String
+  usernameChangedAt DateTime?
+  discoverable Boolean @default(true)
+  showOnline Boolean @default(true)
+  allowRequests String @default("EVERYONE")
+  termsVersion String
+  termsAcceptedAt DateTime
+  lastActiveAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  interests UserInterest[]
+  sentRequests ChatRequest[] @relation("SentRequests")
+  receivedRequests ChatRequest[] @relation("ReceivedRequests")
+  sentMessages Message[]
+  firstConversations Conversation[] @relation("FirstParticipant")
+  secondConversations Conversation[] @relation("SecondParticipant")
+  blocksCreated Block[] @relation("Blocker")
+  blocksReceived Block[] @relation("Blocked")
+  reportsMade Report[] @relation("Reporter")
+  reportsReceived Report[] @relation("ReportedUser")
+  notifications Notification[]
+  refreshSessions RefreshSession[]
+  payment Payment? @relation("ActivatedUser")
+  adminActions ModerationAction[] @relation("AdminActions")
+  moderatedActions ModerationAction[] @relation("ModeratedUser")
+  @@index([district, discoverable, status])
+  @@index([district, locality, showLocality])
+  @@index([lastActiveAt])
+}
+model Interest {
+  id String @id @default(cuid())
+  name String @unique
+  users UserInterest[]
+}
+model UserInterest {
+  userId String
+  interestId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  @@id([userId, interestId])
+}
+model Payment {
+  id String @id @default(cuid())
+  email String
+  amountPaise Int @default(2500)
+  upiId String
+  utr String @unique
+  proofHash String
+  status PaymentStatus @default(PENDING_VERIFICATION)
+  verifiedAt DateTime?
+  verifiedBy String?
+  activatedAt DateTime?
+  userId String? @unique
+  user User? @relation("ActivatedUser", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  @@index([email, status])
+}
+model RefreshSession {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  @@index([userId])
+}
+model ChatRequest {
+  id String @id @default(cuid())
+  senderId String
+  receiverId String
+  sender User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status RequestStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+}
+model Conversation {
+  id String @id @default(cuid())
+  firstId String
+  secondId String
+  first User @relation("FirstParticipant", fields: [firstId], references: [id], onDelete: Cascade)
+  second User @relation("SecondParticipant", fields: [secondId], references: [id], onDelete: Cascade)
+  messages Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([firstId, secondId])
+  @@index([secondId])
+}
+model Message {
+  id String @id @default(cuid())
+  conversationId String
+  senderId String
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body String @db.VarChar(3000)
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([conversationId, createdAt])
+}
+model Block {
+  blockerId String
+  blockedId String
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([blockerId, blockedId])
+}
+model Report {
+  id String @id @default(cuid())
+  reporterId String
+  reportedId String
+  reporter User @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported User @relation("ReportedUser", fields: [reportedId], references: [id], onDelete: Cascade)
+  reason String
+  details String @default("") @db.VarChar(1000)
+  status ReportStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  @@index([status, createdAt])
+}
+model Notification {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type String
+  title String
+  body String
+  href String?
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, readAt, createdAt])
+}
+model ModerationAction {
+  id String @id @default(cuid())
+  moderatorId String
+  targetId String
+  moderator User @relation("AdminActions", fields: [moderatorId], references: [id])
+  target User @relation("ModeratedUser", fields: [targetId], references: [id])
+  action String
+  reason String
+  createdAt DateTime @default(now())
+}

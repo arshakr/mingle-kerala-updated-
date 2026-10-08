@@ -1,0 +1,7 @@
+import {Legal} from "@/components/Legal";
+export const metadata={title:"Activation and refunds"};
+export default function Page(){return <Legal eyebrow="ACTIVATION / PAYMENT SUPPORT" title="Activation & refunds" intro="The ₹25 registration fee supports Mingle Kerala hosting and safety. It is mandatory for new IDs and is not a donation." sections={[
+  {title:"How activation works",paragraphs:["Pay exactly ₹25 to arshaksfi1-1@okicici through your UPI app, then submit the UTR and private email in the activation form. An operator must independently verify receipt in the receiving UPI/bank account. Once verified, your saved browser receipt provides a one-time claim code to complete signup.","Do not submit a screenshot instead of a bank reference. Do not pay twice while waiting for verification. Save your receipt ID and UTR."]},
+  {title:"Errors, duplicates and refunds",paragraphs:["If your payment has been debited but is not verified, please contact support with your UTR, date, amount and payment-request ID. If you made a duplicate payment, contact support for refund review. Refund rights required by applicable law are unaffected.","No refund or activation will be represented as complete until the operator confirms it through actual payment records. The refund process and support response commitments must be finalized by the operator before public launch."]},
+  {title:"Payment privacy",paragraphs:["UPI apps/banks may disclose the payer's name or payment information to the payee. Mingle Kerala will not display this to other members."]}
+ ]}/>;}
